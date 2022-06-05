@@ -1,5 +1,5 @@
-import dataset
-from dataset import TestDataset,TrainDataset
+import dataset.dataset as dataset
+from dataset.dataset import TestDataset,TrainDataset
 from torch.utils.data import Dataset,DataLoader
 from utils.Configuration import CFG
 

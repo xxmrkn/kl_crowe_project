@@ -15,7 +15,7 @@ from numpy import matrix
 import pandas as pd
 
 from tqdm import tqdm
-from dataset import TrainDataset,TestDataset
+from dataset.dataset import TrainDataset,TestDataset
 tqdm.pandas()
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold, KFold, StratifiedGroupKFold
@@ -29,7 +29,7 @@ from torch.optim import lr_scheduler
 from torch.utils.data import Dataset, DataLoader
 from torch.cuda import amp
 from torchvision import models
-from datasetfold import prepare_loaders
+from dataset.datasetfold import prepare_loaders
 
 from utils.Configuration import CFG
 from utils.EvaluationHelper import EvaluationHelper
@@ -38,7 +38,7 @@ from trainval_one_epoch import train_one_epoch, valid_one_epoch
 
 import wandb
 
-import dataset
+import dataset.dataset as dataset
 
 
 def main():

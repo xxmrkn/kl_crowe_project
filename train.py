@@ -14,7 +14,7 @@ from numpy import matrix
 import pandas as pd
 
 from tqdm import tqdm
-from dataset import TrainDataset,TestDataset
+from dataset.dataset import TrainDataset,TestDataset
 tqdm.pandas()
 from sklearn.model_selection import train_test_split
 from model import ViT
@@ -34,7 +34,7 @@ from trainval_one_epoch import train_one_epoch, valid_one_epoch
 
 import wandb
 
-import dataset
+import dataset.dataset as dataset
 
 
 def main():
