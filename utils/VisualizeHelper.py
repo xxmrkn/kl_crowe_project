@@ -18,7 +18,7 @@ def visualize_confusion_matrix(matrix, rowlabels, columnlabels):
     ax.set_xticklabels(rowlabels, minor=False)
     ax.set_yticklabels(columnlabels, minor=False)
     #fig.colorbar(im,ax=ax)
-    plt.savefig("/win/salmon/user/masuda/project/vit_kl_crowe/fig/confusion.png")
+    plt.savefig("/---/confusion.png")
 
 def visualize_plot_loss(ptl,pvl):
     #loss
@@ -35,7 +35,7 @@ def visualize_plot_loss(ptl,pvl):
     plt.legend(frameon=False, fontsize=14)
 
     #plt.show()
-    plt.savefig("/win/salmon/user/masuda/project/vit_kl_crowe/fig/loss30.png")
+    plt.savefig("/---/loss30.png")
     plt.clf()
 
 def visualize_plot_acc(pta,pva):
@@ -53,7 +53,7 @@ def visualize_plot_acc(pta,pva):
     plt.legend(frameon=False, fontsize=14)
 
     #plt.show()
-    plt.savefig("/win/salmon/user/masuda/project/vit_kl_crowe/fig/acc30.png")
+    plt.savefig("/---/acc30.png")
     plt.clf()
 
 def visualize_plot_f1(ptf,pvf):
@@ -71,5 +71,5 @@ def visualize_plot_f1(ptf,pvf):
     plt.legend(frameon=False, fontsize=14)
 
     #plt.show()
-    plt.savefig("/win/salmon/user/masuda/project/vit_kl_crowe/fig/f130.png")
+    plt.savefig("/---/f130.png")
     plt.clf()
