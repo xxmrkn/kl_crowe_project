@@ -15,12 +15,10 @@ from numpy import matrix
 import pandas as pd
 
 from tqdm import tqdm
-from dataset.dataset import TrainDataset,TestDataset
+from dataset import TrainDataset,TestDataset
 tqdm.pandas()
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold, KFold, StratifiedGroupKFold
-
-from model import ViT
 
 import torch
 import torch.nn as nn
@@ -29,7 +27,7 @@ from torch.optim import lr_scheduler
 from torch.utils.data import Dataset, DataLoader
 from torch.cuda import amp
 from torchvision import models
-from dataset.datasetfold import prepare_loaders
+from create_fold import prepare_loaders
 
 from utils.Configuration import CFG
 from utils.EvaluationHelper import EvaluationHelper
@@ -38,30 +36,16 @@ from trainval_one_epoch import train_one_epoch, valid_one_epoch
 
 import wandb
 
-import dataset.dataset as dataset
+import dataset
 
 
 def main():
-
-    #Define model
-    model = ViT(
-    image_size = CFG.image_size, #256*256->65,536
-    patch_size = CFG.patch_size,  #32*32->1,024 #64 patchs -> 8patchs * 8patchs
-    num_classes = CFG.num_classes,
-    dim = 1024,
-    depth = 6,
-    heads = 16,
-    mlp_dim = 2048,
-    dropout = 0.1,
-    emb_dropout = 0.1
-    ).to(CFG.device,dtype=torch.float32)
-
-    print(model)
     
     #Set seed
     CFG.set_seed(CFG.seed)
 
     #Prepare Dataframe
+    print(CFG.csv_path)
     data_df = pd.read_csv(CFG.csv_path)
     data_df["target"] = data_df["Crowe"]+data_df["KL"]
 
@@ -79,12 +63,6 @@ def main():
             print(f'number of target {j} in fold:{i} dataframe')
             print(i,(data_df['target']!=j).sum(),(data_df['target']==j).sum())
 
-    #Metrics
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=CFG.lr, weight_decay=CFG.wd)
-    scheduler = lr_scheduler.CosineAnnealingLR(optimizer,T_max=CFG.T_max, eta_min=CFG.min_lr)
-    #scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
-
     #run training each fold
     best_fold = -1
     best_fold_acc = -10**9
@@ -93,11 +71,54 @@ def main():
         print(f'#'*15)
         print(f'### Fold: {fold}')
         print(f'#'*15)
+
+        #Define model
+        # model = ViT(
+        # image_size = CFG.image_size, #256*256->65,536
+        # patch_size = CFG.patch_size,  #32*32->1,024 #64 patchs -> 8patchs * 8patchs
+        # num_classes = CFG.num_classes,
+        # dim = 1024,
+        # depth = 6,
+        # heads = 16,
+        # mlp_dim = 2048,
+        # dropout = 0.1,
+        # emb_dropout = 0.1
+        # ).to(CFG.device,dtype=torch.float32)
+
+        if CFG.model_name == 'VisionTransformer':
+            #Define Pretrained ViT model
+            model = models.vit_l_16(pretrained=True)
+            model.heads = nn.Sequential(
+                nn.Linear(
+                in_features=1024,
+                out_features=9
+            ))
+            model = model.to(CFG.device)
+
+        elif CFG.model_name == 'VGG16':
+
+            #Define Pretrained VGG16 model
+            model = models.vgg16(pretrained=False)
+            model.classifier[6] = nn.Linear(
+                in_features=4096,
+                out_features=9
+            )
+            model = model.to(CFG.device)
+
+        #print(model)
+
+        #prepare loader 
         train_loader, valid_loader = prepare_loaders(fold=fold,data_df=data_df)
+
+        #Metrics
+        criterion = nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=CFG.lr, weight_decay=CFG.wd)
+        scheduler = lr_scheduler.CosineAnnealingLR(optimizer,T_max=CFG.T_max, eta_min=CFG.min_lr)
+        #scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 
         #wandb
         run = wandb.init(
-            project='vit_kl_crowe-project_kfold', 
+            project='vit_kl_crowe-project_stkfold', 
             config={
                 "learning_rate": CFG.lr,
                 "epochs": CFG.epochs,
@@ -116,8 +137,10 @@ def main():
         since = time.time()
         best_model_wts = copy.deepcopy(model.state_dict())
         best_acc = 0.0
+        best_acc2 = 0.0
         best_f1 = 0.0
         best_epoch = -1
+        best_epoch2 = -1
         history = defaultdict(list)
         cmat = 0
         
@@ -129,11 +152,12 @@ def main():
             train_loss, train_acc, train_f1 = train_one_epoch(model, optimizer, scheduler,
                                                                 criterion, train_loader,
                                                                 CFG.device)
-            valid_loss, valid_acc, valid_f1, cmatrix = valid_one_epoch(model, optimizer, criterion, valid_loader,
+            valid_loss, valid_acc, valid_f1, cmatrix, dataset_size = valid_one_epoch(model, optimizer, criterion, valid_loader,
                                                                 CFG.device)
 
             #manage confusion matrix
-            cmat += cmatrix
+            #cmat += cmatrix
+            valid_acc2 = EvaluationHelper.one_mistake_acc(cmatrix, dataset_size)
 
             history['Train Loss'].append(train_loss)
             history['Train Accuracy'].append(train_acc)
@@ -141,6 +165,7 @@ def main():
 
             history['Valid Loss'].append(valid_loss)
             history['Valid Accuracy'].append(valid_acc)
+            history['Valid Accuracy2'].append(valid_acc2)
             history['Valid F-measure'].append(valid_f1)
 
             # Log the metrics
@@ -148,17 +173,19 @@ def main():
                         "Valid Loss": valid_loss,
                         "Train_Accuracy": train_acc,
                         "Valid Accuracy": valid_acc,
+                        "Valid Accuracy2": valid_acc2,
                         "Train F-measure": train_f1,
                         "Valid F-measure": valid_f1,
                         "LR":scheduler.get_last_lr()[0]})
 
-            #visualize_confusion_matrix(cmat,CFG.labels_name,CFG.labels_name)
-
+            #Training results
             print(f"Train Loss: {train_loss} Train Acc: {train_acc} Train f1: {train_f1}")
-            print(f"Valid Loss: {valid_loss} Valid Acc: {valid_acc} Valid f1: {valid_f1}")
+            
+            #Visualize Validation ConfusionMatrix
+            print(cmatrix,cmatrix.shape)
 
-            #Visualize Confusion Matrix
-            print(cmat)
+            #Validation results
+            print(f"Valid Loss: {valid_loss} Valid Acc: {valid_acc} Valid Acc2: {valid_acc2} Valid f1: {valid_f1}")
 
             #if valid_f1 > best_f1:
             #    print(f"Valid F1-Score Improved ({best_f1:0.4f} ---> {valid_f1:0.4f})")
@@ -170,17 +197,27 @@ def main():
             #    PATH = f"best_epoch-{epoch:02d}.bin"
             #    torch.save(model.state_dict(), PATH)
             #    wandb.save(PATH)
-
+            
+            #If the score improved
             if valid_acc > best_acc:
                 print(f"Valid Accuracy Improved ({best_acc:0.4f} ---> {valid_acc:0.4f})")
                 best_acc = valid_acc
-                best_epoch = epoch
+                best_epoch = epoch+1
                 f = open("utils/conf_mat.txt","wb")
-                pickle.dump(cmat,f)
+                pickle.dump(cmatrix,f)
                 run.summary["Best Accuracy"] = best_acc
                 run.summary["Best Epoch"]   = best_epoch
                 best_model_wts = copy.deepcopy(model.state_dict())
-            cmat = 0
+            
+            if valid_acc2 > best_acc2:
+                print(f"Valid Accuracy2 Improved ({best_acc2:0.4f} ---> {valid_acc2:0.4f})")
+                best_acc2 = valid_acc2
+                best_epoch2 = epoch+1
+                f = open("utils/conf_mat2.txt","wb")
+                pickle.dump(cmatrix,f)
+                run.summary["Best Accuracy2"] = best_acc2
+                run.summary["Best Epoch2"]   = best_epoch2
+                best_model_wts = copy.deepcopy(model.state_dict())
 
         print()
         #visualize confusion matrix
@@ -190,7 +227,7 @@ def main():
 
         time_elapsed = time.time() - since
         print(f'Training complete in {time_elapsed//3600}h {time_elapsed//60}m {time_elapsed%60:.2f}s')
-        print(f'Best val Accuracy: {best_acc:.4f}')
+        print(f'Best Epoch {best_epoch}, Best val Accuracy: {best_acc:.4f}, Best Epoch {best_epoch2}, Best val Accuracy2: {best_acc2:.4f}')
 
         # load best model weights
         model.load_state_dict(best_model_wts)
