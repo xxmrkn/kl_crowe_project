@@ -20,10 +20,11 @@ def get_transforms(data):
     if data == 'train':
         return Compose([
             A.Resize(CFG.image_size, CFG.image_size),
-            #A.Rotate(limit=45, p=0.5),
+            A.Rotate(limit=45, p=0.5),
             #A.HorizontalFlip(p=0.5),
-            #A.RandomBrightnessContrast(p=0.5),
-            #A.GridDropout(ratio=0.3, unit_size_min=None, unit_size_max=None, holes_number_x=5, holes_number_y=5, shift_x=0, shift_y=0, random_offset=False, fill_value=0, mask_fill_value=None, always_apply=False, p=0.5),
+            A.RandomBrightnessContrast(p=0.5),
+            A.GridDropout(ratio=0.3, unit_size_min=None, unit_size_max=None, holes_number_x=5, 
+            holes_number_y=5, shift_x=0, shift_y=0, random_offset=False, fill_value=0, mask_fill_value=None, always_apply=False, p=0.5),
             #A.ShiftScaleRotate(p=0.5),
             A.Normalize(),
             ToTensorV2(),
@@ -76,4 +77,4 @@ class TestDataset(Dataset):
         if self.transform:
             augmented = self.transform(image=image)
             image = augmented['image']
-        return image, label
+        return image, label, image_path

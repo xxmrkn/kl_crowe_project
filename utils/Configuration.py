@@ -6,9 +6,12 @@ import numpy as np
 
 
 class CFG:
-    base_path     = '/---/'
-    image_path    = base_path + "---"
-    csv_path      = base_path + "---.csv"
+    base_path     = '/win/salmon/user/masuda/project/vit_kl_crowe/20220511_DRR_with_Crowe_KL/'
+    fold_path     = '/win/salmon/user/masuda/project/datalist/'
+    #'/kl_crowe_vit/20220511_DRR_with_Crowe_KL/20220511_OsakaHip_TwoSide_KL_Crowe.csv'
+    #base_path     = 'c:\\Users\\masuda_m\\code\\20220511_DRR_with_Crowe_KL\\'
+    image_path    = base_path + "DRR_AP"
+    csv_path      = base_path + "20220511_OsakaHip_TwoSide_KL_Crowe.csv"
     labels_dict   = {0:'KL=0,Crowe=0',1:'KL=1,Crowe=0',2:'KL=1,Crowe=1',3:'KL=1,Crowe=2',4:'KL=1,Crowe=3',
                     5:'KL=1,Crowe=4',6:'KL=2,Crowe=4',7:'KL=3,Crowe=4',8:'KL=4,Crowe=4'}
     labels        = [0,1,2,3,4,5,6,7,8]
@@ -18,20 +21,26 @@ class CFG:
     debug         = False # set debug=False for Full Training
     test_size     = 0.3
 
-    model_name    = 'VisionTransformer'
+    # model name
+    # 'VisionTransformer_Base16','VisionTransformer_Base32'
+    # 'VisionTransformer_Large16','VisionTransformer_Large32'
+    # 'VGG16','Inceptionv3'
+    # 'efficientnet_b0','efficientnet_b3','efficientnet_b7'
+
+    model_name    = 'VisionTransformer_Base16'
     batch_size    = 32
     image_size    = 224
     patch_size    = 16
     epochs        = 3
-    lr            = 1e-3
-    #scheduler     = 'CosineAnnealingLR'
-    min_lr        = 1e-4
+    lr            = 1e-5
+    scheduler     = 'CosineAnnealingLR'
+    min_lr        = 1e-6
     #T_max         = epochs
-    T_max         = int(30000/batch_size*epochs)
-    #T_max         = int(30000/batch_size*epochs)
+    #T_max         = 2
+    T_max         = int(30000/batch_size*epochs)+50
     T_0           = 25
     warmup_epochs = 0
-    wd            = 1e-6
+    wd            = 1e-4
     n_accumulate  = max(1, 32//batch_size)
     n_fold        = 4
     folds         = [0,1,2,3]
