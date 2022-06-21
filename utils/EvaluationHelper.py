@@ -20,10 +20,12 @@ class EvaluationHelper:
     def one_mistake_acc(matrix,dataset_size):
         taikaku1 = sum(np.diag(matrix)) #対角成分
         taikaku2 = sum(np.diag(matrix, k=1)) + sum(np.diag(matrix, k=-1)) #対角成分の両サイド
-        other = sum(matrix)-taikaku1-taikaku2
+        other1 = dataset_size-taikaku1#normal
+        other2 = dataset_size-taikaku1-taikaku2 #1 neighbor
         # print(taikaku1,taikaku2)
-        # print(dataset_size)
-        return (taikaku1+taikaku2)/dataset_size, other
+        print(f'taikaku1:{taikaku1},taikaku2:{taikaku2}')
+        print(f'dataset_size:{dataset_size},other1{other1},other2{other2}')
+        return (taikaku1+taikaku2)/dataset_size,other1,other2
 
     def criterion(y_pred, y_true):
         return nn.CrossEntropyLoss(y_pred,y_true)

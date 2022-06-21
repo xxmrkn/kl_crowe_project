@@ -71,7 +71,7 @@ def train_one_epoch(model, optimizer, scheduler, criterion, dataloader, device):
     return train_loss, train_acc, train_f1
 
 #@torch.no_grad()
-def valid_one_epoch(model, optimizer, criterion, dataloader, device, id_list, tmp_acc):
+def valid_one_epoch(model, optimizer, criterion, dataloader, device, id_list, id_list2, tmp_acc):
     with torch.no_grad():
         model.eval()
         
@@ -134,17 +134,33 @@ def valid_one_epoch(model, optimizer, criterion, dataloader, device, id_list, tm
 
             #log miss classes
             diff = preds - labels #calculate diff
+            #print(f'preds:{preds},labels:{labels}')
+            #print(diff)
+            #print(-CFG.num_classes)
+            
+            #for visualize outliers
+            for i in range(-CFG.num_classes+1,CFG.num_classes):
+                if i in [0]: #remove nomal
+                    pass
+                else:
+                    tmp = EvaluationHelper.index_multi(diff, i)
+                    #print(len(tmp))
+                    #print(i,tmp)
+                    for j in range(len(tmp)):
+                        id_list[i+CFG.num_classes-1].append(image_path[tmp[j]])
+
             for i in range(-CFG.num_classes+1,CFG.num_classes):
                 if i in [-1,0,1]: #remove nomal, 1 neighbor
                     pass
                 else:
                     tmp = EvaluationHelper.index_multi(diff, i)
-                    print(tmp)
+                    #print(len(tmp))
+                    #print(i,tmp)
                     for j in range(len(tmp)):
-                        id_list[i+CFG.num_classes-1].append(image_path[tmp[j]])
-            print(id_list)
+                        id_list2[i+CFG.num_classes-1].append(image_path[tmp[j]])
+            #print(id_list)
 
             gc.collect()
     
-    return valid_loss, valid_acc, valid_f1, c_mat, dataset_size, id_list, tmp_acc
+    return valid_loss, valid_acc, valid_f1, c_mat, dataset_size, id_list, id_list2, tmp_acc
     #return valid_loss, valid_acc, valid_f1, c_mat

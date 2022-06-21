@@ -12,8 +12,8 @@ class CFG:
     #base_path     = 'c:\\Users\\masuda_m\\code\\20220511_DRR_with_Crowe_KL\\'
     image_path    = base_path + "DRR_AP"
     csv_path      = base_path + "20220511_OsakaHip_TwoSide_KL_Crowe.csv"
-    labels_dict   = {0:'KL=0,Crowe=0',1:'KL=1,Crowe=0',2:'KL=1,Crowe=1',3:'KL=1,Crowe=2',4:'KL=1,Crowe=3',
-                    5:'KL=1,Crowe=4',6:'KL=2,Crowe=4',7:'KL=3,Crowe=4',8:'KL=4,Crowe=4'}
+    labels_dict   = {0:'KL=0,Crowe=0',1:'KL=0,Crowe=1',2:'KL=1,Crowe=1',3:'KL=2,Crowe=1',4:'KL=3,Crowe=1',
+                    5:'KL=4,Crowe=1',6:'KL=4,Crowe=2',7:'KL=4,Crowe=3',8:'KL=4,Crowe=4'}
     labels        = [0,1,2,3,4,5,6,7,8]
     labels_name   = ['0,0','1,0','1,1','1,2','1,3',
                     '1,4','2,4','3,4','4,4']
@@ -31,7 +31,7 @@ class CFG:
     batch_size    = 32
     image_size    = 224
     patch_size    = 16
-    epochs        = 3
+    epochs        = 30
     lr            = 1e-5
     scheduler     = 'CosineAnnealingLR'
     min_lr        = 1e-6

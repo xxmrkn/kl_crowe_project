@@ -136,62 +136,8 @@ def main():
         best_epoch2 = -1
         history = defaultdict(list)
         cmat = 0
-        id_list = [[] for _ in range(CFG.num_classes-2)]
-        crnt_acc = 0.0
-        
-        for epoch in range(CFG.epochs):
-            gc.collect()
-            print(f'Epoch {epoch+1}/{CFG.epochs}')
-            print('-' * 10)
-
-            train_loss, train_acc, train_f1 = train_one_epoch(model, optimizer, scheduler,
-                                                                criterion, train_loader,
-                                                                CFG.device)
-            valid_loss, valid_acc, valid_f1, cmatrix, dataset_size, id_list, tmp_acc = valid_one_epoch(model, optimizer, criterion, valid_loader,
-                                                                CFG.device, id_list, tmp_acc)
-
-            #manage confusion matrix
-            #cmat += cmatrix
-            valid_acc2, others = EvaluationHelper.one_mistake_acc(cmatrix, dataset_size)
-            #othersはnomalと1neighbor以外の外れ値の数、可視化するときのsubplotの引数として渡す
-            
-            path = []
-            lab = []
-            ac = []
-            pre = []
-
-            cnt = [i  for i in range(-CFG.num_classes+1,CFG.num_classes)]
-            cnt.remove(-1)
-            cnt.remove(0)
-            cnt.remove(1)
-
-            for i,c in zip(id_list,cnt):
-                    for j in range(len(i)):
-                        label = re.findall('AP\\\(.*)',i[j])#extract ID
-
-                        actual = data_df[data_df['ID'].str.contains(*label)]['target']
-                        pred = actual+c
-
-                        actual_label = CFG.labels_dict[actual.item()]
-                        pred_label = CFG.labels_dict[pred.item()]
-
-                        path.append(i[j])
-                        lab.append(*label)
-                        ac.append(actual_label)
-                        pre.append(pred_label)
-
-            visualize_image(path,lab,ac,pre,others)
-
-            #save outliers
-            # if tmp_acc > crnt_acc:
-            #     crnt_acc = tmp_acc
-            #     f = open(f"outputs/{CFG.model_name}_outliers.txt","wb")
-            #     pickle.dump(id_list,f)
-            #     print('--> Saved Outliers')
-            #print(id_list)
-            # id_list = [[] for _ in range(CFG.num_classes-2)]
-
-            history['Train Loss'].append(train_loss)
+        id_list = [[] for _ in range(CFG.num_classes*2-3)]
+        print(f'id list{id_list}')
             history['Train Accuracy'].append(train_acc)
             history['Train F-measure'].append(train_f1)
 
