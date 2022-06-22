@@ -1,0 +1,20 @@
+# KL,Crowe分類　実験結果
+
+## [条件]
+## 1 Primary, Secondary, Unknownの区別なし
+## 2 Model (Pretrained = True)
+## ・ViT_b_16 (torchvision)
+## ・ViT_b_32 (torchvision)
+## ・VIT_
+
+### [ parameter ]
+| model architechture | ViT_b_16 | ViT_b32 | vgg11 |
+| ---- | ---- | ---- | ---- |
+| image size | 224×224 | 224×224 | 224×224 |
+| batch size | 32 | 32 | 32 |
+| debug size | 0.2 | 0.2 | 0.2 |
+| epoch | 10 | 10 | 10 |
+| lr | 1e-4 | 1e-4 | 1e-4 |
+| optimizer | Adam | Adam | Adam |
+| criterion | CrossEntropyLoss | CrossEntropyLoss | CrossEntropyLoss |
+| random state | 1234 | 1234 | 1234 |
