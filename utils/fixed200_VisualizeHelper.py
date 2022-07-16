@@ -43,13 +43,13 @@ def visualize_image(path,id,labels1,labels2,num,flag,fold,epoch):
 
     if flag==1:
         plt.suptitle(f'MODEL:{CFG.model_name} EPOCH:{epoch}/{CFG.epochs} FOLD:{fold}/{CFG.n_fold}',fontsize=80)
-        file_name = f"fig/{CFG.model_name}/{CFG.n_fold}fold/outlier/{CFG.model_name}_fold{fold}_epoch{epoch}{CFG.epochs}_outliers.pdf"
+        file_name = f"fig/{CFG.model_name}/{CFG.n_fold}fold/outlier/fixed200_{CFG.model_name}_fold{fold}_epoch{epoch}{CFG.epochs}_outliers.pdf"
         plt.savefig(file_name)
         print('--> Saved Outlier images (nomal accuracy)')
         plt.close()
     elif flag==2:
         plt.suptitle(f'MODEL:{CFG.model_name} EPOCH:{epoch}/{CFG.epochs} FOLD:{fold}/{CFG.n_fold}',fontsize=80)
-        file_name = f"fig/{CFG.model_name}/{CFG.n_fold}fold/outlier2/{CFG.model_name}_fold{fold}_epoch{epoch}{CFG.epochs}_outliers2.pdf"
+        file_name = f"fig/{CFG.model_name}/{CFG.n_fold}fold/outlier2/fixed200_{CFG.model_name}_fold{fold}_epoch{epoch}{CFG.epochs}_outliers2.pdf"
         plt.savefig(file_name)
         print('--> Saved Outlier images (1 neighbor accuracy)')
         plt.close()
@@ -76,20 +76,20 @@ def visualize_total_image(path,id,labels1,labels2,num,normal_acc,neighbor_acc,fl
         plt.axis("off")
     if flag==1:
         new = [[0]*3 for _ in range(len(id))]
-        print(len(id),len(labels1),len(labels2))
+        #print(len(id),len(labels1),len(labels2))
 
         for i in range(len(id)):
             new[i][0],new[i][1],new[i][2] = id[i],labels1[i],labels2[i]
 
-        print(new)
+        #print(new)
 
-        with open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/csv_to_pptx_{CFG.model_name}_{CFG.n_fold}fold_{CFG.epochs}epoch_outlier.csv", 'w', newline="") as f:
+        with open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/fixed200_csv_to_pptx_{CFG.model_name}_{CFG.n_fold}fold_{CFG.epochs}epoch_outlier.csv", 'w', newline="") as f:
             writer = csv.writer(f)
             writer.writerows(new)
         print('--> Saved Total Outlier csv')
 
-        plt.suptitle(f'Model:{CFG.model_name}  Epoch:{CFG.epochs}  Fold:{CFG.n_fold}  \nNumber of images:{num}/944  Normal Accuracy:{normal_acc:.4f}',fontsize=100)
-        file_name = f"fig/{CFG.model_name}/{CFG.n_fold}fold/{CFG.model_name}_{CFG.n_fold}fold_{CFG.epochs}epoch_outliers.pdf"
+        plt.suptitle(f'Model:{CFG.model_name}  Epoch:{CFG.epochs}  Fold:{CFG.n_fold}  \nNumber of images:{num}/400  Normal Accuracy:{normal_acc:.4f}',fontsize=100)
+        file_name = f"fig/{CFG.model_name}/{CFG.n_fold}fold/fixed200_{CFG.model_name}_{CFG.n_fold}fold_{CFG.epochs}epoch_outliers.pdf"
         plt.savefig(file_name)
         print('--> Saved Total Outlier images (normal accuracy)')
         plt.close()
@@ -99,15 +99,15 @@ def visualize_total_image(path,id,labels1,labels2,num,normal_acc,neighbor_acc,fl
         for i in range(len(path)):
             new2[i][0],new2[i][1],new2[i][2] = id[i],labels1[i],labels2[i]
 
-        print(new2)
+        #print(new2)
 
-        with open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/csv_to_pptx_{CFG.model_name}_{CFG.n_fold}fold_{CFG.epochs}epoch_outlier2.csv", 'w', newline="") as f:
+        with open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/fixed200_csv_to_pptx_{CFG.model_name}_{CFG.n_fold}fold_{CFG.epochs}epoch_outlier2.csv", 'w', newline="") as f:
             writer = csv.writer(f)
             writer.writerows(new2)
         print('--> Saved Total Outlier2 csv')
 
-        plt.suptitle(f'Model:{CFG.model_name}  Epoch:{CFG.epochs}  Fold:{CFG.n_fold}  \nNumber of images:{num}/944  1Neighbor Accuracy:{neighbor_acc:.4f}',fontsize=100)
-        file_name = f"fig/{CFG.model_name}/{CFG.n_fold}fold/{CFG.model_name}_{CFG.n_fold}fold_{CFG.epochs}epoch_outliers2.pdf"
+        plt.suptitle(f'Model:{CFG.model_name}  Epoch:{CFG.epochs}  Fold:{CFG.n_fold}  \nNumber of images:{num}/400  1Neighbor Accuracy:{neighbor_acc:.4f}',fontsize=100)
+        file_name = f"fig/{CFG.model_name}/{CFG.n_fold}fold/fixed200_{CFG.model_name}_{CFG.n_fold}fold_{CFG.epochs}epoch_outliers2.pdf"
         plt.savefig(file_name)
         print('--> Saved Total Outlier images (1 neighbor accuracy)')
         plt.close()

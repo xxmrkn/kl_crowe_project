@@ -98,7 +98,7 @@ def main():
 
         #create model
         model = choose_model(CFG.model_name)
-        #print(model)
+        print(model)
 
         #Metrics
         criterion = nn.CrossEntropyLoss()
@@ -108,16 +108,17 @@ def main():
 
         #wandb
         run = wandb.init(
-            project='kl_crowe-project_fold', 
+            project='kl_crowe-project', 
             config={
                 "model_name": CFG.model_name,
                 "learning_rate": CFG.lr,
+                "fold": CFG.n_fold,
                 "epochs": CFG.epochs,
                 "batch_size": CFG.batch_size,
                 "optimizer": "Adam"
             },
             entity="xxmrkn",
-            name=f"{CFG.model_name}|fold-{fold+1}|dim-{CFG.image_size}**2|batch-{CFG.batch_size}|lr-{CFG.lr}",)
+            name=f"{CFG.n_fold}fold|{CFG.model_name}|fold-{fold+1}|dim-{CFG.image_size}**2|batch-{CFG.batch_size}|lr-{CFG.lr}",)
         wandb.watch(model, log_freq=100)
 
         #Confirm cuda is avalirable
@@ -222,7 +223,7 @@ def main():
             print(f"Train Loss: {train_loss} Train Acc: {train_acc} Train f1: {train_f1}")
             
             #Visualize Validation ConfusionMatrix
-            print(cmatrix,cmatrix.shape)
+            print(cmatrix)
 
             #Validation results
             print(f"Valid Loss: {valid_loss} Valid Acc: {valid_acc} Valid Acc2: {valid_acc2} Valid f1: {valid_f1}")
@@ -237,20 +238,23 @@ def main():
             #    PATH = f"best_epoch-{epoch:02d}.bin"
             #    torch.save(model.state_dict(), PATH)
             #    wandb.save(PATH)
+            if (epoch+1)%10==0:
+                f = open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/confusion-matrix_normal-acc/{CFG.model_name}_fold{fold+1}_epoch{epoch+1}{CFG.epochs}_conf_mat.txt","wb")
+                pickle.dump(cmatrix,f)
+                print('--> Saved Confusion Matrix')
 
+            if (epoch+1)%10==0:
+                f = open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/confusion-matrix_1neighbor-acc/{CFG.model_name}_fold{fold+1}_epoch{epoch+1}{CFG.epochs}_conf_mat2.txt","wb")
+                pickle.dump(cmatrix,f)
+                print('--> Saved Confusion Matrix2')
 
             #print(data_df)
             #If the score improved
             if valid_acc > best_acc:
-                flag = 1
                 print(f"Valid Accuracy Improved ({best_acc:0.4f} ---> {valid_acc:0.4f})")
 
                 best_acc = valid_acc
                 best_epoch = epoch+1
-
-                f = open(f"outputs/{CFG.model_name}/{CFG.model_name}_fold{fold+1}_epoch{epoch+1}_conf_mat.txt","wb")
-                pickle.dump(cmatrix,f)
-                print('--> Saved Confusion Matrix')
 
                 run.summary["Best Accuracy"] = best_acc
                 run.summary["Best Epoch"]   = best_epoch
@@ -276,27 +280,19 @@ def main():
                             lab.append(*label)
                             ac.append(actual_label)
                             pre.append(pred_label)
-                print(len(path),len(lab),len(ac),len(pre))
 
-                # f = open(f"outputs/{CFG.model_name}_fold{fold+1}_outlier_fold{fold+1}_mat.txt","wb")
-                # pickle.dump(id_list,f)
-                # print('--> Saved Outlier Matrix')
+            if (epoch+1)%10==0:
+                flag = 1
                 print(f"number of outliers{others}")
                 visualize_image(path,lab,ac,pre,others,flag,fold+1,epoch+1)
-                #id_list = [[] for _ in range(CFG.num_classes-2)]
 
             best_model_wts = copy.deepcopy(model.state_dict())
             
             if valid_acc2 > best_acc2:
-                flag = 2
                 print(f"Valid Accuracy2 Improved ({best_acc2:0.4f} ---> {valid_acc2:0.4f})")
 
                 best_acc2 = valid_acc2
                 best_epoch2 = epoch+1
-
-                f = open(f"outputs/{CFG.model_name}/{CFG.model_name}_fold{fold+1}_epoch{epoch+1}_conf_mat2.txt","wb")
-                pickle.dump(cmatrix,f)
-                print('--> Saved Confusion Matrix2')
 
                 run.summary["Best Accuracy2"] = best_acc2
                 run.summary["Best Epoch2"]   = best_epoch2
@@ -319,17 +315,14 @@ def main():
                             lab2.append(*label)
                             ac2.append(actual_label)
                             pre2.append(pred_label)
-                print(len(path2),len(lab2),len(ac2),len(pre2))
-                # f = open(f"outputs/{CFG.model_name}_outlier_fold{fold+1}_mat2.txt","wb")
-                # pickle.dump(id_list2,f)
-                # print('--> Saved Outlier Matrix2')
+
+            if (epoch+1)%10==0:
+                flag = 2
                 print(f"number of outliers{others2}")
                 visualize_image(path2,lab2,ac2,pre2,others2,flag,fold+1,epoch+1)
-                #id_list = [[] for _ in range(CFG.num_classes-2)]
-
-
+            
                 best_model_wts = copy.deepcopy(model.state_dict())
-                #id_list = [[] for _ in range(CFG.num_classes-2)]
+
         print()
         #visualize confusion matrix
         #print(cmat)

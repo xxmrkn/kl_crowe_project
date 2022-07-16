@@ -34,7 +34,7 @@ from create_fold import prepare_loaders
 from select_model import choose_model
 from utils.Configuration import CFG
 from utils.EvaluationHelper import EvaluationHelper
-from utils.VisualizeHelper import visualize_image, visualize_total_image
+from utils.fixed200_VisualizeHelper import visualize_image, visualize_total_image
 from trainval_one_epoch import train_one_epoch, valid_one_epoch 
 
 import wandb
@@ -48,26 +48,31 @@ def main():
     CFG.set_seed(CFG.seed)
 
     #Prepare Dataframe
-    data_df = pd.read_csv(CFG.csv_path)
-    data_df["target"] = data_df["Crowe"]+data_df["KL"]#create target
-    data_df["UID"] = data_df["ID"].str.extract('(.+)_')#extract ID
+    f = open(CFG.fixed200_df_path,"rb")
+    data_df = pickle.load(f)
+    data_df = pd.DataFrame(data_df)
+    data_df['target']
+
+    #0714ここからはじめるipadにメモってる内容を実装
+    #data_df["target"] = data_df["Crowe"]+data_df["KL"]#create target
+
     print(data_df)
 
     #manage filename
     file_names = []
 
-    p = pathlib.Path(f'../datalist/k{CFG.n_fold}').glob('*.txt')
+    p = pathlib.Path(f'../datalist2/k{CFG.n_fold}').glob('*.txt')
     for i in p:
         #print(i.name)
         file_names.append(f'k{CFG.n_fold}/'+i.name)
-    #print(file_names)
+    print(file_names)
 
     name = []
     for j in range(len(file_names)):
         for i in range(CFG.n_fold):
             if str(i) in file_names[j]:
-                name.append(os.path.join(CFG.fold_path, file_names[j]))
-    #print(name)
+                name.append(os.path.join(CFG.fixed_fold_path, file_names[j]))
+    print(name)
 
     #run training each fold
     best_fold = -1
@@ -97,14 +102,13 @@ def main():
             line = f.read().splitlines()
         with open(name[fold+CFG.n_fold]) as f:
             line2 = f.read().splitlines()
-        #print(line,line2)
+        #print(len(line),len(line2))
         valid_df = data_df[data_df['UID'].isin(line)]
         train_df = data_df[data_df['UID'].isin(line2)]
-        #print(train_df.shape,valid_df.shape)
+        print(len(train_df),len(valid_df))
 
         train_dataset = TrainDataset(train_df, transform=dataset.get_transforms('train'))
         valid_dataset = TestDataset(valid_df, transform=dataset.get_transforms('valid'))
-        print(len(train_dataset),len(valid_dataset))
 
         train_loader = DataLoader(train_dataset, batch_size=CFG.batch_size, 
                                 num_workers=4, shuffle=True, pin_memory=True, drop_last=False)
@@ -123,7 +127,7 @@ def main():
 
         #wandb
         run = wandb.init(
-            project='kl_crowe-project', 
+            project='fixed_kl_crowe-project', 
             config={
                 "model_name": CFG.model_name,
                 "learning_rate": CFG.lr,
@@ -133,7 +137,7 @@ def main():
                 "optimizer": "Adam"
             },
             entity="xxmrkn",
-            name=f"{CFG.n_fold}fold|{CFG.model_name}|fold-{fold+1}|dim-{CFG.image_size}**2|batch-{CFG.batch_size}|lr-{CFG.lr}",)
+            name=f"fixed200_{CFG.n_fold}fold|{CFG.model_name}|fold-{fold+1}|dim-{CFG.image_size}**2|batch-{CFG.batch_size}|lr-{CFG.lr}",)
         wandb.watch(model, log_freq=100)
 
         #Confirm cuda is avalirable
@@ -203,13 +207,13 @@ def main():
             #Validation results
             print(f"Valid Loss: {valid_loss} Valid Acc: {valid_acc} Valid Acc2: {valid_acc2} Valid f1: {valid_f1}")
 
-            if (epoch+1)%10==0:
-                f = open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/confusion-matrix_normal-acc/{CFG.model_name}_fold{fold+1}_epoch{epoch+1}{CFG.epochs}_conf_mat.txt","wb")
+            if epoch+1==CFG.epochs:
+                f = open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/confusion-matrix_normal-acc/fixed200_{CFG.model_name}_fold{fold+1}_epoch{epoch+1}{CFG.epochs}_conf_mat.txt","wb")
                 pickle.dump(cmatrix,f)
                 print('--> Saved Confusion Matrix')
 
-            if (epoch+1)%10==0:
-                f = open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/confusion-matrix_1neighbor-acc/{CFG.model_name}_fold{fold+1}_epoch{epoch+1}{CFG.epochs}_conf_mat2.txt","wb")
+            if epoch+1==CFG.epochs:
+                f = open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/confusion-matrix_1neighbor-acc/fixed200_{CFG.model_name}_fold{fold+1}_epoch{epoch+1}{CFG.epochs}_conf_mat2.txt","wb")
                 pickle.dump(cmatrix,f)
                 print('--> Saved Confusion Matrix2')
 
@@ -224,7 +228,7 @@ def main():
                 run.summary["Best Accuracy"] = best_acc
                 run.summary["Best Epoch"]   = best_epoch
 
-            if (epoch+1)%10==0:
+            if epoch+1==CFG.epochs:
                 for i,c in zip(id_list,cnt):
                     flag = 1 
                     if i in [0]:
@@ -269,7 +273,7 @@ def main():
                 run.summary["Best Accuracy2"] = best_acc2
                 run.summary["Best Epoch2"]   = best_epoch2
                 
-            if (epoch+1)%10==0: 
+            if epoch+1==CFG.epochs: 
                 flag = 2
                 #extract and visualize outliers
                 for i,c in zip(id_list2,cnt):
@@ -313,7 +317,7 @@ def main():
                 normal_acc, neighbor_acc, remain, remain2 = EvaluationHelper.total_acc(total_confusion_matrix,total_dataset_size)
                 print(f"normal_acc:{normal_acc},1neighbor_acc:{neighbor_acc},remain:{remain},remain2:{remain2}")
 
-                f = open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/{CFG.model_name}_{fold+1}fold_{epoch+1}{CFG.epochs}epoch_totalconfusion_matrix.txt","wb")
+                f = open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/fixed200_{CFG.model_name}_{fold+1}fold_{epoch+1}{CFG.epochs}epoch_totalconfusion_matrix.txt","wb")
                 pickle.dump(total_confusion_matrix,f)
                 print('--> Saved Total Confusion Matrix')
         print()
@@ -329,7 +333,7 @@ def main():
             visualize_total_image(total_path2,total_id2,total_actual2,total_pred2,remain2,normal_acc,neighbor_acc,sign)
             
             class_report = EvaluationHelper.total_report(clsrepo_preds, clsrepo_labels)
-            f = open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/{CFG.model_name}_{fold+1}fold_{epoch+1}{CFG.epochs}epoch_class_report.txt","wb")
+            f = open(f"outputs/{CFG.model_name}/{CFG.n_fold}fold/fixed200_{CFG.model_name}_{fold+1}fold_{epoch+1}{CFG.epochs}epoch_class_report.txt","wb")
             pickle.dump(class_report,f)
             print('--> Saved Classification Report')
         #visualize_confusion_matrix(cmat,CFG.labels_name,CFG.labels_name)

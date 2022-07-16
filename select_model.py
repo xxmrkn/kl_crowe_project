@@ -11,7 +11,8 @@ def choose_model(model_name):
         model.heads = nn.Sequential(
             nn.Linear(
             in_features=768,
-            out_features=9
+            out_features=7
+            #out_features=9
         ))
         model = model.to(CFG.device)
 
@@ -47,7 +48,7 @@ def choose_model(model_name):
 
     elif model_name == 'VGG16':
         #Define Pretrained VGG16 model
-        model = models.vgg16(pretrained=False)
+        model = models.vgg16(pretrained=True)
         model.classifier[6] = nn.Linear(
             in_features=4096,
             out_features=9
@@ -65,7 +66,7 @@ def choose_model(model_name):
     elif model_name == 'efficientnet_b0':
         model = models.efficientnet_b0(pretrained=True)
         model.classifier = nn.Linear(
-                        in_features=1289,out_features=9
+                        in_features=1280,out_features=9
         )
         model = model.to(CFG.device)
 

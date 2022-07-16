@@ -14,7 +14,7 @@ from numpy import matrix
 import pandas as pd
 
 from tqdm import tqdm
-from dataset.dataset import TrainDataset,TestDataset
+from dataset import TrainDataset,TestDataset
 tqdm.pandas()
 from sklearn.model_selection import train_test_split
 from model import ViT
@@ -34,21 +34,24 @@ from trainval_one_epoch import train_one_epoch, valid_one_epoch
 
 import wandb
 
-import dataset.dataset as dataset
+import dataset
 
 
 def main():
 
-    #Define Pretrained ViT model
-    model = models.vit_l_16(pretrained=True)
-    model.heads = nn.Sequential(
-        nn.Linear(
-        in_features=1024,
-        out_features=9
-    ))
-    model = model.to(CFG.device)
+    #Define model
+    model = ViT(
+    image_size = CFG.image_size, #256*256->65,536
+    patch_size = CFG.patch_size,  #32*32->1,024 #64 patchs -> 8patchs * 8patchs
+    num_classes = CFG.num_classes,
+    dim = 1024,
+    depth = 6,
+    heads = 16,
+    mlp_dim = 2048,
+    dropout = 0.1,
+    emb_dropout = 0.1
+    ).to(CFG.device,dtype=torch.float32)
 
-    #View Model Detail
     print(model)
     
     #Set seed
@@ -83,7 +86,6 @@ def main():
             "learning_rate": CFG.lr,
             "epochs": CFG.epochs,
             "batch_size": CFG.batch_size,
-            "patch_size": CFG.patch_size,
             "optimizer": "Adam"
         },
         entity="xxmrkn")
@@ -138,10 +140,9 @@ def main():
         print(f"Train Loss: {train_loss} Train Acc: {train_acc} Train f1: {train_f1}")
         print(f"Valid Loss: {valid_loss} Valid Acc: {valid_acc} Valid f1: {valid_f1}")
 
+        #Visualize Confusion Matrix
         print(cmat)
 
-
-        
         #if valid_f1 > best_f1:
         #    print(f"Valid F1-Score Improved ({best_f1:0.4f} ---> {valid_f1:0.4f})")
         #    best_f1 = valid_f1

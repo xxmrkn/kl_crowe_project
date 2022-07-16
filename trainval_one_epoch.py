@@ -1,5 +1,6 @@
 import gc
 from glob import glob
+import pickle
 from collections import defaultdict
 
 from tqdm import tqdm
@@ -47,8 +48,6 @@ def train_one_epoch(model, optimizer, scheduler, criterion, dataloader, device):
             train_acc = running_acc / step
             train_f1 = running_f1 / step
 
-            #print(optimizer.param_groups[0]['lr'])
-
         optimizer.zero_grad()
         grad_scaler.scale(loss).backward()
         grad_scaler.step(optimizer)
@@ -70,8 +69,10 @@ def train_one_epoch(model, optimizer, scheduler, criterion, dataloader, device):
     
     return train_loss, train_acc, train_f1
 
-#@torch.no_grad()
-def valid_one_epoch(model, optimizer, criterion, dataloader, device, id_list, id_list2, tmp_acc):
+
+def valid_one_epoch(model, optimizer, criterion, dataloader, 
+                    device, id_list, id_list2, tmp_acc, epoch, 
+                    fold, clsrepo_labels,clsrepo_preds):
     with torch.no_grad():
         model.eval()
         
@@ -86,20 +87,23 @@ def valid_one_epoch(model, optimizer, criterion, dataloader, device, id_list, id
         for step, (inputs, labels, image_path) in pbar:        
             inputs  = inputs.to(device)
             labels  = labels.to(device)
-            #optimizer.zero_grad()
 
             batch_size = inputs.size(0)
 
             outputs  = model(inputs)
-                
+            
             _, preds = torch.max(outputs, 1)
-
-            #print(labels,preds)
+            print(labels,preds)
 
             acc = EvaluationHelper.accuracy(CFG.to_numpy(preds), CFG.to_numpy(labels))
             f_m = EvaluationHelper.f_measure(CFG.to_numpy(preds), CFG.to_numpy(labels))
             cm  = EvaluationHelper.conf_mtrx(CFG.to_numpy(preds), CFG.to_numpy(labels))
-            #print(cm.shape)
+
+            #for calculate class report (recall precision f1-socore etc)
+            if epoch == CFG.epochs:
+                clsrepo_labels += labels.tolist()
+                clsrepo_preds += preds.tolist()
+
             loss = criterion(outputs,labels)
 
             running_loss += loss.item()
@@ -122,21 +126,7 @@ def valid_one_epoch(model, optimizer, criterion, dataloader, device, id_list, id
             torch.cuda.empty_cache()
 
             #log miss classes
-            # if tmp_acc < valid_acc:
-            #     tmp_acc = acc
-            #     diff = abs(preds - labels)
-            #     for i in range(2,CFG.num_classes):
-            #         tmp = EvaluationHelper.index_multi(diff, i)
-            #         #print(tmp)
-            #         for j in range(len(tmp)):
-            #             id_list[i-2].append(image_path[tmp[j]])
-            #print(id_list)
-
-            #log miss classes
             diff = preds - labels #calculate diff
-            #print(f'preds:{preds},labels:{labels}')
-            #print(diff)
-            #print(-CFG.num_classes)
             
             #for visualize outliers
             for i in range(-CFG.num_classes+1,CFG.num_classes):
@@ -144,8 +134,7 @@ def valid_one_epoch(model, optimizer, criterion, dataloader, device, id_list, id
                     pass
                 else:
                     tmp = EvaluationHelper.index_multi(diff, i)
-                    #print(len(tmp))
-                    #print(i,tmp)
+
                     for j in range(len(tmp)):
                         id_list[i+CFG.num_classes-1].append(image_path[tmp[j]])
 
@@ -154,13 +143,11 @@ def valid_one_epoch(model, optimizer, criterion, dataloader, device, id_list, id
                     pass
                 else:
                     tmp = EvaluationHelper.index_multi(diff, i)
-                    #print(len(tmp))
-                    #print(i,tmp)
+
                     for j in range(len(tmp)):
                         id_list2[i+CFG.num_classes-1].append(image_path[tmp[j]])
-            #print(id_list)
 
             gc.collect()
+        
     
-    return valid_loss, valid_acc, valid_f1, c_mat, dataset_size, id_list, id_list2, tmp_acc
-    #return valid_loss, valid_acc, valid_f1, c_mat
+    return valid_loss, valid_acc, valid_f1, c_mat, dataset_size, id_list, id_list2, tmp_acc, clsrepo_preds, clsrepo_labels
